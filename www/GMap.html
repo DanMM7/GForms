@@ -1,4 +1,6 @@
-<div container='MapZone_Main'><iframe id="mapZone" style="z-index:999999;top:0px; left:0px; position:fixed; width:98%; height:98%" allow="geolocation"></iframe><button style='position:fixed; top:0px; right:0px;z-index:9999999;' act="CloseMap" type="button">X</button>
+<div container='MapZone_Main'>
+    <iframe id="mapZone" style="z-index:999999;top:0px; left:0px; position:fixed; width:98%; height:98%" allow="geolocation"></iframe>
+    <button style='position:fixed; top:0px; right:0px;z-index:9999999;' act="CloseMap" type="button">X</button>
     </div>
  
 <script>
@@ -8,11 +10,10 @@
     
     $('[act="CloseMap"]').on({click:function() {
         
-         
         
-                                                    var fieldID = $("#main1").attr("fieldid");
-                                            var sectionID = $("#main1").attr("sectionid");
-                                            var pageID = $("#main1").attr("pageid");
+            var fieldID = $("#main1").attr("fieldid");
+            var sectionID = $("#main1").attr("sectionid");
+            var pageID = $("#main1").attr("pageid");
                                             
                                             
         console.log( $("#mapZone").attr("src" ) );

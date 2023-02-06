@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en-us">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
@@ -92,7 +92,6 @@
     <script src="utils/init.js"></script>
 
     <script>
-
         mapData = JSON.parse($('#mapData', window.parent.document).attr("mapData"));
         var coodx = $('#mapData', window.parent.document).attr("coordX");
         var coody = $('#mapData', window.parent.document).attr("coordY");
@@ -110,12 +109,10 @@
             "dojo/on",
             "esri/graphic",
             "esri/layers/GraphicsLayer",
-            "esri/geometry/Point",
-            "esri/symbols/SimpleFillSymbol",
 
 
             "utils/offline-tpk-min.js", "dojo/domReady!"],
-            function (ArcGISDynamicMapServiceLayer, Map, on, Graphic, GraphicsLayer, Point, SimpleFillSymbol) {
+            function (ArcGISDynamicMapServiceLayer, Map, on, Graphic, GraphicsLayer) {
                 
                 var map;
                 var fileInput, fileInputField;
@@ -146,10 +143,10 @@
                 
 
 
-                window.parent.window.Point = Point;
+           //     window.parent.window.Point = Point;
                 window.parent.window.GraphicsLayer = GraphicsLayer;
-                window.parent.window.SimpleFillSymbol = SimpleFillSymbol;
-                window.parent.window.Graphic = Graphic;
+             //   window.parent.window.SimpleFillSymbol = SimpleFillSymbol;
+              //  window.parent.window.Graphic = Graphic;
 
                 for (var iMap = 0; iMap < mapData.onlineMaps.length; iMap++) {
                     var dynamicMapServiceLayer = new ArcGISDynamicMapServiceLayer(mapData.onlineMaps[iMap].url, {});
@@ -170,6 +167,7 @@
                     console.log("COORD ISSUNUE");//;alert("Unable to locate device position.");
 
                 else {
+				/*
                     var gLayer = new GraphicsLayer();
                     map.addLayer(gLayer);
                     var symbol = new SimpleFillSymbol();
@@ -186,6 +184,9 @@
 
                     gLayer.add(new Graphic(new Point(coody, coodx), markerSymbol));
                     map.centerAndZoom(new Point(coody, coodx), 2);
+					
+					*/
+					console.log("Zooming to : " + coodx + ' x ' + coody);
                 }
 
                 window.parent.window.map = map;
@@ -194,7 +195,6 @@
 
                 // Retrieve the TPK file via an HTTP request
                 function getTPK(url, id) {
-
 
                     var xhrRequest = new XMLHttpRequest();
                     xhrRequest.open("GET", url, true);
@@ -219,7 +219,7 @@
 
                     xhrRequest.onload = function (oEvent) {
                         if (this.status == 200) {
-                            $("[status='" + id + "']").html("Remote tpk download finished.");
+                            $("[status='" + id + "']").html("Remote tpk download finished.");// Create textbox calling tpk layer id
                             zipParser(this.response);
                         }
                         else {
@@ -261,7 +261,7 @@
                     tpkLayer.extend(entries);
                     map.addLayer(tpkLayer);
 
-
+                    console.log(tpkLayer);
 
                 }
 

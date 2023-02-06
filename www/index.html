@@ -1,14 +1,13 @@
 ﻿<!DOCTYPE html>
 <!--HTML5 doctype-->
-<html>
+<html lang="en-us">
 
 <head>
-
     <title>GForms</title>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta http-equiv="Pragma" content="no-cache">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+ 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style id="G_CustomCSS"></style>
     <style>
@@ -47,38 +46,16 @@
 
     <script type="text/javascript" charset="utf-8" src="config.js"></script>
 
-    <link rel="stylesheet" href="assets/demo.css">
-    <link rel="stylesheet" href="assets/form-basic.css">
+    
+    
 
 
     <link href="assets/global/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
     <link href="assets/global/plugins/simple-line-icons/simple-line-icons.min.css" rel="stylesheet" type="text/css" />
-    <link href="assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <!-- END GLOBAL MANDATORY STYLES -->
-    <!-- END PAGE LEVEL STYLES -->
-    <!-- BEGIN THEME STYLES -->
-    <link href="assets/global/css/components.css" rel="stylesheet" type="text/css" />
-    <link href="assets/global/css/plugins.css" rel="stylesheet" type="text/css" />
-    <link href="assets/admin/layout/css/layout.css" rel="stylesheet" type="text/css" />
-    <link id="style_color" href="assets/admin/layout/css/themes/default.css" rel="stylesheet" type="text/css" />
-    <link href="assets/admin/layout/css/custom.css" rel="stylesheet" type="text/css" />
-
-
-
-    <!--===============================================================================================-->
-    <link rel="icon" type="image/png" href="images/icons/favicon.ico" />
-    <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
-    <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
-    <!--===============================================================================================-->
+    
+    
     <link rel="stylesheet" type="text/css" href="vendor/animate/animate.css">
-    <!--===============================================================================================-->
     <link rel="stylesheet" type="text/css" href="vendor/css-hamburgers/hamburgers.min.css">
-    <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
-    <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="css/util.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <!--===============================================================================================-->
 
@@ -121,9 +98,6 @@
 
     <script src="lib/jsig/jSignature.min.js"></script>
     <script>
-
-
-
         var dbPhotos;
 
 
@@ -290,7 +264,7 @@
             $("#loginSection").hide('fast');
 
             // If already logged in, load settings
-            if (loggedinuser != undefined && loggedinuser.UserID != -1 && loggedinuser.UserID != undefined &&1==2) {
+            if (loggedinuser != undefined && loggedinuser.UserID != -1 && loggedinuser.UserID != undefined) {
 
                 InitAppConfig();
 
@@ -309,7 +283,6 @@
 
 
             windowResizeW();
-
 
             $('[container="loadingScreen"]').hide('fast');
             GetPosition();
@@ -393,7 +366,8 @@
 
             UpdateJsonFields();
             var page = 0;
-            $("#MenuList").html("<br/><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span txt='FrontMessage'><i class='fa fa-refresh'></i> Please wait... <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Loading pick list data...<span></p>");
+			$("#MenuList").html("");
+            $("#MenuListContext").html("<br/><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<h1 txt='FrontMessage'><i class='fa fa-refresh'></i> Please wait... <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Loading pick list data...<h1></p>");
             console.log("Checking...");
             for (page = 0; page < FormSet.applications[global_applicationid].forms.length; page++) {
                 {
@@ -411,8 +385,9 @@
 
                     if (FormSet.applications[global_applicationid].forms[page].ShowForm == 2) {
                         $("#MenuList").append(
-                            $("<div>")
-                                .addClass("col-md-6")
+                            $("<li>").append(
+								$("<a>")
+                                .attr("href", "#")
                                 .attr("index", "1")
                                 .attr("pageid", page)
                                 .on({
@@ -424,26 +399,20 @@
                                 })
                                 .append(
                                 $("<div>")
-                                    .attr("class", "dashboard-stat blue")
-                                    .append($("<div>").attr("class", "visual").append($("<i>").css("margin-left", "0px").attr("class", FormSet.applications[global_applicationid].forms[page].FAIconName)))
-                                    .append($("<div>").attr("class", "details").css("padding-right", "2px")
-                                        .append($("<div>").attr("class", "number").html(""))
-                                        .append($("<div>").attr("class", "desc").html(FormSet.applications[global_applicationid].forms[page].FormName))
-
-
-                                    )
-                                    .append(
-                                    $("<a>").attr("class", "more").html()
+                                    .attr("class", "box-wrap")
+                                    .append($("<i>").css("margin-left", "0px").attr("class", FormSet.applications[global_applicationid].forms[page].FAIconName))
+                                    .append($("<span>").attr("class", "text")
+                                        .html(FormSet.applications[global_applicationid].forms[page].FormName)
                                     )
                                 )
 
-                        );
+                        ));
                     }
 
 
                     var c =
-                        $("<div>")
-                            .attr("class", "panel main-content")
+                        $("<section>")
+                            .attr("class", "panel accordion-block")
                             .css("width", "97%")
                             .css("margin", "15px")
                             .css("display", "none")
@@ -473,7 +442,8 @@
                                         }*/
 
                     $("#MenuList").append(
-                        $("<div>")
+                        $("<li>").append(
+							$("<a>")
                             .attr("class", "col-md-6")
                             .attr("index", "1")
                             .attr("pageid", page)
@@ -486,18 +456,15 @@
                             })
                             .append(
                             $("<div>")
-                                .attr("class", "dashboard-stat " + FormSet.applications[global_applicationid].views[page].BackgroundColor)
-                                .append($("<div>").attr("class", "visual").append($("<i>").css("margin-left", "0px").attr("class", FormSet.applications[global_applicationid].views[page].FAIconName)))
-                                .append($("<div>").attr("class", "details").css("padding-right", "2px")
-                                    .append($("<div>").attr("class", "number").html(""))
-                                    .append($("<div>").attr("class", "desc").html(FormSet.applications[global_applicationid].views[page].ViewName))
+                                .attr("class", "box-wrap")
+                                .append($("<i>").attr("class", FormSet.applications[global_applicationid].views[page].FAIconName))
+                                .append($("<span>").attr("class", "text")
+                                    .html(FormSet.applications[global_applicationid].views[page].ViewName)
 
 
-                                )
-                                .append(
-                                $("<a>").attr("class", "more").html()
                                 )
                             )
+							)
 
                     );
 
@@ -685,14 +652,12 @@
         <div class="">
 
             <div id="splashscreen" class='container-login100' style="background-color:black !important">
-                GForms
-
-                <br>
+                
                 <br>
                 <div container="splash_startingup" class="container-login100">
                     <span class='ui-icon ui-icon-loading spin'></span>
 
-                    <b style="color:white">Please wait</b>
+                    <b style="color:white"></b>
                 </div>
 
                 <div class="app" container="splash_zoomsection" style="display:none">
@@ -725,32 +690,32 @@
                 <p><b>Your device must be online to retrieve settings for the first time.</b></p><br /><hr />
                 <p>Please connect your device to an online source and try again.</p>
             </div>
-            <div class="container-login100" container="loadingScreen" style="display:none;" align="center">
-                <div style="border:1px solid #53535; background:white; color:#535353; width:280px;">
+            <div class="container" container="loadingScreen" style="display:none;" align="center">
+                <div class="block-widget" style="border:1px solid #53535; background:white; color:#535353; width:480px;">
 
                     <div class="" style=" margin:15px;   border-color: #eff2f7;
-    font-size: 13px;
-    font-weight: 400;
-    background: #fafafa;
-    text-transform: uppercase;
-    padding: 15px;
-    padding: 10px 15px;
-    border-bottom: 1px solid transparent;
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;">
-                        <div class="" style="    border-color: #eff2f7;
-    font-size: 13px;
-    font-weight: 400;
-    background: #fafafa;
-    text-transform: uppercase;
-    padding: 15px;
-    padding: 10px 15px;
-    border-bottom: 1px solid transparent;
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;">
+                        font-size: 13px;
+                        font-weight: 400;
+                        background: #fafafa;
+                        text-transform: uppercase;
+                        padding: 15px;
+                        padding: 10px 15px;
+                        border-bottom: 1px solid transparent;
+                        border-top-left-radius: 3px;
+                        border-top-right-radius: 3px;">
+                                            <div class="" style="    border-color: #eff2f7;
+                        font-size: 13px;
+                        font-weight: 400;
+                        background: #fafafa;
+                        text-transform: uppercase;
+                        padding: 15px;
+                        padding: 10px 15px;
+                        border-bottom: 1px solid transparent;
+                        border-top-left-radius: 3px;
+                        border-top-right-radius: 3px;
+                        -webkit-box-sizing: border-box;
+                        -moz-box-sizing: border-box;
+                        box-sizing: border-box;">
                             Preparing Sources...
                         </div>
                         <div class="panel-body">
@@ -765,7 +730,7 @@
 
             </div>
             <div class="container-login100" id="loginSection">
-                <h1>Loading Login...</h1>
+                <h1>Loading App...</h1>
             </div>
             <div class="container-login100" id="switchApplication" style="display:none; color:white; padding:3px; background-color:black !important; background:black;" align="center">
                 <h1>Multiple Applications are avaliable</h1>
@@ -776,7 +741,8 @@
 
             <div class="" container='WorkWindow' style="display:none;">
                 <div class="row">
-                    <div class="col-sm-12" style="background-color:#535353; color:white">
+				<header class="header">
+                    <div class="container" style="">
                         <a class="menuButton" act="LoadMenu" data-left-menu="left" data-transition="cover" style="padding:4px; float: left"> <i class='fa fa-bars'></i> Menu</a>
                         <a class="menuButton" act="MapBack" data-left-menu="left" style="padding:4px; float: left; display:none;"> <i class='fa fa-backward'></i> Close Map</a>
                         <div style="float: right">
@@ -784,16 +750,21 @@
 
                             <div id="divLanguageBar" style="display:inline;"></div>
 
-
-                            <a class="btn btn-primary" act="MapModule" style='background-color:blue !important'><i class="fa fa-map"></i>Map Menu</a>
-                            <a class="btn btn-primary" act="SyncModule"><i class="fa fa-refresh"></i>Sync Menu</a>
+                            <div class="button">
+                            <a class="btn btn-primary" act="MapModule" href="#" style=''><i class="fa fa-map"></i>Map Menu</a>
+                            <a class="btn btn-primary" act="SyncModule" href="#"><i class="fa fa-refresh"></i>Sync Menu</a>
+							</div>
                         </div>
                     </div>
+				</header>
                 </div>
-                <div class="row" class="margin:0px;">
-                    <div class="pages col-sm-12" id="MainForm" style=" padding:3px;">
-                        <div class="panel" id="menuScreen" data-title="Menu" data-selected="true">
-                            <div id="MenuList">Here</div>
+                <main class="main">
+							<div class="container" style="">
+					 <div class="block-widget"  id="MainForm">
+                        <div class="container panel" id="menuScreen" data-title="Menu" data-selected="true">
+								<div id="MenuListContext"></div>
+								<ul id="MenuList" class="widget-links" ></ul>
+							
                         </div>
                         <div class="panel" id="main" style="display:none;" data-title="Dashboard" data-selected="true">
                             This is the dashboard... But should be a custom page
@@ -802,7 +773,8 @@
                             Sync Panel HTML will load here
                         </div>
                     </div>
-                </div>
+					</div>
+                </main>
                 <div style="color:white; float:right; position:fixed; bottom:0px; z-index:300;" container="footer"><p>Starting Up</p></div>
                 <div id="SpecialScripts"></div>
             </div>
@@ -814,9 +786,7 @@
         </div>
     </div>
     <div id='dim_wrapper' style='width:100%; height:100%; background:#000; z-index:10; position:fixed; top:0px;display:none; text-align:center; opacity:0.75'>
-        <h2 style="
-    color: white;
-">
+        <h2 style="color: white;">
             <br />Loading
         </h2>
     </div>

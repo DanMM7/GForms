@@ -119,9 +119,16 @@ function BuildDynoDDL(page, xSection, xFields, DDL, whereValue, childFilterC, co
 
             var selected = false;
 
-            if (dValue != undefined && dValue == fieldIDVal) {
-                selected = true;
+            if (controlType == "Multi") {
+                console.log("Checking [" + fieldIDVal + "] in [" + dValue + "] ");
+                if (dValue != undefined && dValue.indexOf(fieldIDVal)>-1) {
+                    selected = true;
+                }
             }
+            else
+                if (dValue != undefined && dValue == fieldIDVal) {
+                    selected = true;
+                }
 
             if (whereValue != "") {
                 var cmpValFieldIDVal = eval("tableSource.rows[xDDLValue]." + childFilterC);
@@ -130,12 +137,14 @@ function BuildDynoDDL(page, xSection, xFields, DDL, whereValue, childFilterC, co
                 else
                     pass = false;
             }
-            if (pass)
+            if (pass) {
                 $(DDL).append($("<option>")
                     .attr("value", fieldIDVal)
                     .attr(selected ? "selected" : "notselected", "selected")
                     .text(eval("tableSource.rows[xDDLValue]." + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.DisplayField))
                 );
+
+            }
         }
     }
     return DDL;
@@ -144,9 +153,9 @@ function BuildDynoDDL(page, xSection, xFields, DDL, whereValue, childFilterC, co
 var iCurrentActivePage = -1;
 function LoadController(page, control, editRow, pageOld) {
     $("#dim_wrapper").show();
-	/*if(iCurrentActivePage == page){
-		return;		
-	}*/
+    /*if(iCurrentActivePage == page){
+        return;		
+    }*/
     iCurrentActivePage = page;
     windowResizeW();
 
@@ -201,12 +210,35 @@ function LoadController2(page, control, editRow, pageOld) {
 
     editData = undefined;
     editIDField = undefined;
+    var key = "";
+    var fuid = new Date().getTime();// (control.fid==undefined? new Date().getTime(): control.x);
 
-    if (isNaN(editRow) == false) {
 
-        iEditedIndex = editRow;
-        editData = SQLOfflineData[FormSet.applications[global_applicationid].forms[page].PrimaryTable].rows[editRow];
-        console.log("Edited row is: " + editData);
+    if (editRow != undefined) {
+        if (isNaN(editRow) == false) {
+
+            iEditedIndex = editRow;
+            editData = SQLOfflineData[FormSet.applications[global_applicationid].forms[page].PrimaryTable].rows[editRow];
+        }
+        else {
+            if (editRow[0] == 'S') {
+                key = editRow.split(":")[1];
+                if (key != undefined) {
+                    editData = new Object();
+                    for (var xC = 0; xC < ChildForms.length; xC++) {
+                        if (ChildForms[xC].UniqueValue == key) {
+                            //// !!!!!!!!!!!!!!!!! SET THE MATCHING IDS HERE  !!!!!!!!!!!!!!!!!! ////
+                            fuid = key;
+                            for (var xFields = 0; xFields < ChildForms[xC].SyncArray.InsertLayerFields.length; xFields++) {
+                                editData[ChildForms[xC].SyncArray.InsertLayerFields[xFields].Field] = ChildForms[xC].SyncArray.InsertLayerFields[xFields].Value;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     var language2use = false;
@@ -234,54 +266,59 @@ function LoadController2(page, control, editRow, pageOld) {
     // #TODO: Add fail safe code... sometime...
 
 
-    var c = $("<div>")
-        .attr("class", "form-horizontal form-basic");
+    var cM = $("<div>")
+        .attr("class", "form");
 
 
-    $(c).append(
+    $(cM).append(
         $("<div>")
             .attr("class", "form-group")
             .attr("container", "formrowid")
             .attr("parentpage", page)
+            .attr("formid", FormSet.applications[global_applicationid].forms[page].FormSysID)
             .attr("startTime", (DevicePosition.timestamp == undefined ? new Date().getTime() : DevicePosition.timestamp))
             .attr("startLat", (DevicePosition.coords.latitude == undefined ? "0" : DevicePosition.coords.latitude))
             .attr("startLong", (DevicePosition.coords.longitude == undefined ? "0" : DevicePosition.coords.longitude))
-            .attr("uniqeValue", new Date().getTime())
+            .attr("uniqeValue", fuid)
             .attr("isEdit", (editRow == undefined ? false : true))
 
             .append(
-            $("<div>")
-                .attr("class", "col-sm-12")
-                .append(
                 $("<div>")
-                    .attr("loadingBox", FormSet.applications[global_applicationid].forms[page].FormID)
-                )
+                    .attr("class", "col-sm-12")
+                    .append(
+                        $("<div>")
+                            .attr("loadingBox", FormSet.applications[global_applicationid].forms[page].FormID)
+                    )
             )
     );
 
 
-    $(c).append(
+    $(cM).append(
         $("<div>")
             .attr("class", "pull-right")
             .attr("container", "sectionrowclass")
             .attr("parentpage", page)
             .append(
-            $("<div>")
-                .attr("class", "fa fa-circle")
-                .css("color", (FormSet.applications[global_applicationid].forms[page].IsOffline == 1 ? "lime" : "red"))
+                $("<div>")
+                    .attr("class", "fa fa-circle")
+                    .css("color", (FormSet.applications[global_applicationid].forms[page].IsOffline == 1 ? "lime" : "red"))
             )
     );
-    $(c).append(
+    $(cM).append(
         $("<div>")
             .attr("class", "row")
             .attr("container", "sectionrowclass")
             .attr("parentpage", page)
             .append(
-            $("<div>")
-                .attr("class", "col-sm-12")
-                .html("<h2 style='margin-top:0px; color:red'>" + FormSet.applications[global_applicationid].forms[page].FormName + "</h2>")
+                $("<div>")
+                    .attr("class", "col-sm-12")
+                    .html("<h2 style='margin-top:0px; color:red'>" + FormSet.applications[global_applicationid].forms[page].FormName + "</h2>")
             )
     );
+
+    var sectionBlock = $("<ul>").addClass("accordion");
+    var activeSection = FormSet.applications[global_applicationid].forms[page].Sections[0].Title;
+    var c = $("<div>").addClass("slide-wrap");
 
     // Loop each section and create the controls.
     for (var xSection = 0; xSection < FormSet.applications[global_applicationid].forms[page].Sections.length; xSection++) {
@@ -293,24 +330,14 @@ function LoadController2(page, control, editRow, pageOld) {
         }
 
         // Build up the section block - title/header
-        if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Title != "") {
+        if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Title != activeSection) {
             var title = FormSet.applications[global_applicationid].forms[page].Sections[xSection].Title;
             if (FormSet)
-                $(c).append(
-                    $("<div>")
-                        .attr("class", "row")
-                        .attr("container", "sectionrowclass")
-                        .attr("parentpage", page)
-                        .append(
-                        $("<div>")
-                            .attr("class", "col-sm-12")
-                            .append(
-                            $("<h3>")
-                                .css("margin-top", "0px")
-                                .html(FormSet.applications[global_applicationid].forms[page].Sections[xSection].Title)
-                            )
-                        )
-                );
+                $(sectionBlock).append(
+                    $("<li>").append(
+                        $("<a>").addClass("opener").attr("openerInit", "false").attr("href", "#").text(activeSection).append($("<i>").addClass("icon icon-chevron-down"))).append($("<div>").addClass("slide").append(c)));
+            c = $("<div>").addClass("slide-wrap");
+            activeSection = title;
         }
 
         // Now built every control
@@ -328,13 +355,11 @@ function LoadController2(page, control, editRow, pageOld) {
             if (editData != undefined) {
                 dValue = editData[FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField];
             }
-
-
-            if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValue !== undefined)
+            else if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValue !== undefined)
                 dValue = FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValue;
-            else if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValueJS !== undefined) {
 
-                dValue = eval(replaceVals(FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValueJS, "{this.val}", dValue));
+            if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValueJS !== undefined) {
+                dValue = eval(replaceVals(replaceVals(FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DefaultValueJS, "{this.val}", dValue), "[Q]", "\"") + (dValue == "" ? "" : ";'" + dValue + "'"));
             }
 
 
@@ -417,7 +442,7 @@ function LoadController2(page, control, editRow, pageOld) {
 
                             .attr("dest", FormSet.applications[global_applicationid].forms[page].PrimaryTable + "." + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
                             .attr("field_dest", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
-                            .attr("type", "input")
+                            .attr("type", typeOfControl)
                             .attr(cenabled, cenabled)
                             .attr("pageid", page)
                             .attr("fieldid", xFields)
@@ -475,6 +500,7 @@ function LoadController2(page, control, editRow, pageOld) {
                         .attr("field_dest", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
                         .attr("sectionid", xSection)
                         .css("z-index", "10000")
+                        .css("height", "150px")
                         .css("color", "black")
                         .attr("dest", FormSet.applications[global_applicationid].forms[page].PrimaryTable + "." + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
                         .attr("pageid", page)
@@ -516,7 +542,7 @@ function LoadController2(page, control, editRow, pageOld) {
                         }
                     }
                     else if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.SourceType == "SQL") {
-                        DDL = BuildDynoDDL(page, xSection, xFields, DDL, "", "Multi", dValue);
+                        DDL = BuildDynoDDL(page, xSection, xFields, DDL, "", "", "Multi", dValue);
                     }
                     right_control = DDL;
                     break;
@@ -524,6 +550,7 @@ function LoadController2(page, control, editRow, pageOld) {
                     if (dValue == "")
                         dValue == "[NULL]";
                     else {
+                        //console.log("DDL value is: " + dValue);
                     }
                     var DDL = $("<select>")
                         .attr("class", "form-control_old")
@@ -574,16 +601,22 @@ function LoadController2(page, control, editRow, pageOld) {
                             var opt = $("<option>")
                                 .attr("value", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.Values[xDDLValue].Value)
                                 .text(FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.Values[xDDLValue].Display)
+                                .attr("selected", "false")
                                 ;
                             if (dValue == FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.Values[xDDLValue].Value) {
+                                console.log("Setting selected value as " + dValue);
                                 $(opt).attr("selected", "selected");
+                                $(opt).attr("selectUpdate", "true");
+                            }
+                            else {
+
+                                console.log("Defualt value not set for " + labelText);
                             }
                             $(DDL).append(opt);
                         }
                     }
                     else if (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataSource.SourceType == "SQL") {
-                        DDL = BuildDynoDDL(page, xSection, xFields, DDL, "", "", dValue);
-                        console.log(FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label + " - ");
+                        DDL = BuildDynoDDL(page, xSection, xFields, DDL, "", "", "", dValue);
                     }
                     right_control = DDL;
                     break;
@@ -642,130 +675,135 @@ function LoadController2(page, control, editRow, pageOld) {
                         .attr("type", "date")
 
                         .append(
-                        $("<div>")
-                            .attr("class", "row")
-                            .append(
                             $("<div>")
-                                .attr("class", "col-sm-12").css("padding-right", "0").css("padding-left", "0")
-                                .append($("<div>").append($("<button>").html("dummy").css("display", "none"))
-                                    .append(
-                                    $("<button>")
-                                        .attr("type", "button")
-                                        .attr("class", "btn btn-primary")
-                                        .html("" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label +
-                                        (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].IsRequired == "yes" ? "&nbsp;<i style='color:white'>*</i>" : ""))
-                                        .attr("fieldid", xFields)
-                                        .attr("sectionid", xSection)
-                                        .css("width", "320px")
-                                        .attr("pageid", page)
-                                        .attr("relationship", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].relationship)
-                                        .attr("buttonAct", "addFrom")
-                                        .on({
-                                            click: function () {
-                                                // Load the subform
-
-                                                $("[subformBack]").hide();
-                                                var fieldID = $(this).attr("fieldid");
-                                                var sectionID = $(this).attr("sectionid");
-                                                var pageID = $(this).attr("pageid");
-
-
-                                                if ($(this).attr("relationship") == "1")// && $("[pageid='"+  pageID + "'][sectionid='"+  sectionID + "'][fieldid='"+  fieldID + "'][childResults] tr").length==1)
-                                                {
-                                                    $(this).attr("disabled", "disabled");
-                                                }
-
-                                                child_item = new Object();
-                                                child_item.ParentForm = pageID;
-                                                child_item.ParentSectionID = sectionID;
-                                                child_item.ParentFieldID = fieldID;
-                                                child_item.ParentFormUID = FormSet.applications[global_applicationid].forms[pageID].FormName;
-                                                child_item.ParentFormName = FormSet.applications[global_applicationid].forms[pageID].FormName;
-                                                child_item.PageID = undefined;
-
-                                                $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("Loading... Please wait...");
-
-
-                                                $("[buttonAct='addFrom'][pageid='" + pageID + "']").hide();
-                                                for (var x = 0; x < FormSet.applications[global_applicationid].forms.length; x++) {
-
-                                                    if (FormSet.applications[global_applicationid].forms[x].FormSysID ==
-                                                        FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].subForm.SubformID) {
-                                                        // Sub form found
-                                                        child_item.PageID = x;
-                                                        LoadController(x + "", { newPage: x, fieldID: fieldID, sectionID: sectionID, pageID: pageID });
-
-                                                        setTimeout(function () {
-                                                            console.log("!" + pageID);
-                                                            $("[buttonAct='cancel'][pageid='" + pageID + "']").show();
-                                                        }, 200);
-                                                    }
-                                                }
-
-                                                if (child_item.PageID == undefined) {
-                                                    // No permissions?
-                                                    $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("Could not access Sub Form. Please check permissions.");
-                                                }
-                                            }
-                                        })
-                                    ).append(
-                                    $("<button>")
-                                        .attr("type", "button")
-                                        .attr("class", "btn btn-primary")
-                                        .html("<i class='fa fa-backward'></i> Back")
-                                        .css("display", "none")
-                                        .attr("subformBack", "1")
-                                        .attr("fieldid", xFields)
-                                        .attr("sectionid", xSection)
-                                        .attr("pageid", page)
-                                        .attr("buttonAct", "cancel")
-                                        .on({
-                                            click: function () {
-                                                // Load the subform
-
-                                                $("[subformBack]").show();
-
-                                                var fieldID = $(this).attr("fieldid");
-                                                var sectionID = $(this).attr("sectionid");
-                                                var pageID = $(this).attr("pageid");
-
-                                                iCurrentActivePage = -1;
-
-                                                $("[buttonAct='addFrom'][pageid='" + pageID + "']").show();
-                                                $("[buttonAct='cancel'][pageid='" + pageID + "']").hide();
-                                                $("[container='sectionrowclass'][parentpage='" + pageID + "']").show();
-                                                $("[container='itemrowclass'][parentpage='" + pageID + "']").show();
-
-                                                $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("");
-                                            }
-                                        })
-
-
-
-                                    ).append(
+                                .attr("class", "")
+                                .append(
                                     $("<div>")
-                                        .attr("container", "child")
-                                        .attr("fieldid", xFields)
-                                        .attr("sectionid", xSection)
-                                        .attr("pageid", page)
-                                        .html("")
-                                    ))
-                            )
+                                        .attr("class", "col-sm-12").css("padding-right", "0").css("padding-left", "0")
+                                        .append($("<div>").append($("<button>").html("dummy").css("display", "none"))
+                                            .append(
+                                                $("<button>")
+                                                    .attr("type", "button")
+                                                    .attr("class", "btn-solid")
+                                                    .html("" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label +
+                                                        (FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].IsRequired == "yes" ? "&nbsp;<i style='color:white'>*</i>" : ""))
+                                                    .attr("fieldid", xFields)
+                                                    .attr("sectionid", xSection)
+                                                    .attr("pageid", page)
+                                                    .attr("relationship", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].relationship)
+                                                    .attr("buttonAct", "addFrom")
+                                                    .on({
+                                                        click: function () {
+                                                            // Load the subform
+
+                                                            $("[subformBack]").hide();
+                                                            var fieldID = $(this).attr("fieldid");
+                                                            var sectionID = $(this).attr("sectionid");
+                                                            var pageID = $(this).attr("pageid");
+
+
+                                                            if ($(this).attr("relationship") == "1")// && $("[pageid='"+  pageID + "'][sectionid='"+  sectionID + "'][fieldid='"+  fieldID + "'][childResults] tr").length==1)
+                                                            {
+                                                                $(this).attr("disabled", "disabled");
+                                                            }
+
+                                                            child_item = new Object();
+                                                            child_item.ParentForm = pageID;
+                                                            child_item.ParentSectionID = sectionID;
+                                                            child_item.ParentFieldID = fieldID;
+                                                            child_item.ParentFormUID = FormSet.applications[global_applicationid].forms[pageID].FormName;
+                                                            child_item.ParentFormName = FormSet.applications[global_applicationid].forms[pageID].FormName;
+                                                            child_item.PageID = undefined;
+
+                                                            $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("Loading... Please wait...");
+
+
+                                                            $("[buttonAct='addFrom'][pageid='" + pageID + "']").hide();
+                                                            for (var x = 0; x < FormSet.applications[global_applicationid].forms.length; x++) {
+
+                                                                if (FormSet.applications[global_applicationid].forms[x].FormSysID ==
+                                                                    FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].subForm.SubformID) {
+                                                                    // Sub form found
+                                                                    child_item.PageID = x;
+                                                                    LoadController(x + "", { newPage: x, fieldID: fieldID, sectionID: sectionID, pageID: pageID });
+
+                                                                    setTimeout(function () {
+                                                                        $("[buttonAct='cancel'][pageid='" + pageID + "']").show();
+                                                                    }, 200);
+                                                                }
+                                                            }
+
+                                                            if (child_item.PageID == undefined) {
+                                                                // No permissions?
+                                                                $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("Could not access Sub Form. Please check permissions.");
+                                                            }
+                                                        }
+                                                    })
+                                            ).append(
+                                                $("<button>")
+                                                    .attr("type", "button")
+                                                    .attr("class", "btn-solid")
+                                                    .html("<i class='fa fa-backward'></i> Back")
+                                                    .css("display", "none")
+                                                    .attr("subformBack", "1")
+                                                    .attr("fieldid", xFields)
+                                                    .attr("sectionid", xSection)
+                                                    .attr("pageid", page)
+                                                    .attr("buttonAct", "cancel")
+                                                    .on({
+                                                        click: function () {
+                                                            // Load the subform
+
+                                                            $("[subformBack]").show();
+
+                                                            var fieldID = $(this).attr("fieldid");
+                                                            var sectionID = $(this).attr("sectionid");
+                                                            var pageID = $(this).attr("pageid");
+
+                                                            iCurrentActivePage = -1;
+
+                                                            $("[buttonAct='addFrom'][pageid='" + pageID + "']").show();
+                                                            $("[buttonAct='cancel'][pageid='" + pageID + "']").hide();
+                                                            $("[container='sectionrowclass'][parentpage='" + pageID + "']").show();
+                                                            $("[container='itemrowclass'][parentpage='" + pageID + "']").show();
+
+                                                            $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("");
+                                                        }
+                                                    })
+
+
+
+                                            ).append(
+                                                $("<div>")
+                                                    .attr("container", "child")
+                                                    .attr("fieldid", xFields)
+                                                    .attr("sectionid", xSection)
+                                                    .attr("pageid", page)
+                                                    .html("")
+                                            ))
+                                )
                         )
 
                         .append(
-                        $("<div>")
-                            .attr("container", "childResults")
-                            .attr("fieldid", xFields)
-                            .attr("sectionid", xSection)
-                            .attr("pageid", page)
-                            .append($("<table>"))
+                            $("<div>")
+                                .attr("container", "childResults")
+                                .attr("fieldid", xFields)
+                                .attr("sectionid", xSection)
+                                .attr("pageid", page)
+                                .append($("<hr>"))
+                                .append($("<table>").append($("<thead>")).append($("<tbody>")))
                         )
                         .append(
-                        $("<p>")
-                        );
+                            $("<p>")
+                        ).append($("<script>").text(""));
 
-
+                    for (var xC = 0; xC < ChildForms.length; xC++) {
+                        if (ChildForms[xC].ParentForm == page && ChildForms[xC].ParentFieldID == xFields && ChildForms[xC].ParentFormUID == fuid) {
+                            console.log("!!!! SETTING !!!!! INDEX:" + xC);
+                            setTimeout(function () { UpdateSubTableForm(ChildForms[xC].PageID, fuid, ChildForms[xC]); }, 1000);
+                            break;
+                        }
+                    }
 
                     right_control = DDL;
                     break;
@@ -782,35 +820,35 @@ function LoadController2(page, control, editRow, pageOld) {
                         .css("margin", "0px")
                         //.css("width","85px")
                         .append(
-                        $("<button>")
-                            .attr("class", "btn blue")
-                            .attr("fieldid", xFields)
-                            .attr("sectionid", xSection)
-                            .css("display", "inline")
-                            .css("margin", "0px")
-                            .html("Sign")
-                            .on({
-                                click: function () {
-                                    $("[container='signature_sign']").html("");
-                                    $("[container='signature_sign']").attr("fieldid", $(this).attr("fieldid"));
-                                    $("[container='signature_sign']").attr("sectionid", $(this).attr("sectionid"));
+                            $("<button>")
+                                .attr("class", "btn-solid")
+                                .attr("fieldid", xFields)
+                                .attr("sectionid", xSection)
+                                .css("display", "inline")
+                                .attr("type", "button")
+                                .css("margin", "0px")
+                                .html("Sign")
+                                .on({
+                                    click: function () {
+                                        $("[container='signature_sign']").html("");
+                                        $("[container='signature_sign']").attr("fieldid", $(this).attr("fieldid"));
+                                        $("[container='signature_sign']").attr("sectionid", $(this).attr("sectionid"));
 
-                                    $("#divSignHere").show('fast', function () {
+                                        $("#divSignHere").show('fast', function () {
 
-                                        setTimeout(function () {
+                                            setTimeout(function () {
+                                                $("[container='signature_sign']").jSignature({ height: $('[container="signature_sign"]').height() - 20, width: $('[container="signature_sign"]').width() });
+                                            }, 200);
+                                        });
 
-                                            $("[container='signature_sign']").jSignature({ height: $('[container="signature_sign"]').height() - 20, width: $('[container="signature_sign"]').width() });
-                                        }, 200);
-                                    });
-
-                                }
-                            })
+                                    }
+                                })
                         )
                         .append(
-                        $("<div>")
-                            .attr("container", "signature")
-                            .css("display", "none")
-                            .html("")
+                            $("<div>")
+                                .attr("container", "signature")
+                                .css("display", "none")
+                                .html("")
                         );
 
                     right_control = ParentElement;
@@ -828,36 +866,36 @@ function LoadController2(page, control, editRow, pageOld) {
                             $("<div>")
                                 .css("display", "inline")
                                 .append(
-                                $("<button>")
-                                    .attr("class", "btn blue")
-                                    .attr("fieldid", xFields)
-                                    .attr("sectionid", xSection)
-                                    .attr("pageid", page)
-                                    .attr("xFields", xFields)
-                                    //                 .attr("xSettingIndex", xMaps)
-                                    .html("<i class='fa  fa-map-marker'/>")
-                                    .css("display", "inline")
-                                    .attr("fieldid_map", xFields)
-                                    .on({
-                                        click: function () {
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .attr("fieldid", xFields)
+                                        .attr("sectionid", xSection)
+                                        .attr("pageid", page)
+                                        .attr("xFields", xFields)
+                                        //                 .attr("xSettingIndex", xMaps)
+                                        .html("<i class='fa  fa-map-marker'/>")
+                                        .css("display", "inline")
+                                        .attr("fieldid_map", xFields)
+                                        .on({
+                                            click: function () {
 
-                                            var fieldID = $(this).attr("fieldid");
-                                            var sectionID = $(this).attr("sectionid");
-                                            var pageID = $(this).attr("pageid");
+                                                var fieldID = $(this).attr("fieldid");
+                                                var sectionID = $(this).attr("sectionid");
+                                                var pageID = $(this).attr("pageid");
 
 
-                                            $("#main1").attr("fieldid", fieldID);
-                                            $("#main1").attr("sectionID", sectionID);
-                                            $("#main1").attr("pageID", pageID);
+                                                $("#main1").attr("fieldid", fieldID);
+                                                $("#main1").attr("sectionID", sectionID);
+                                                $("#main1").attr("pageID", pageID);
 
-                                            for (var ixS = 0; ixS < FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings.length; ixS++) {
-                                                if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings[ixS].Key == "mapUrl")
-                                                    mapUrl = FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings[ixS].Value;
+                                                for (var ixS = 0; ixS < FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings.length; ixS++) {
+                                                    if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings[ixS].Key == "mapUrl")
+                                                        mapUrl = FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].JSONExtra.AdditionalSettings[ixS].Value;
+                                                }
+
+                                                $("#main1").load("GoogleMap.html");
                                             }
-
-                                            $("#main1").load("GoogleMap.html");
-                                        }
-                                    })
+                                        })
                                 )
                                 .append($("<div>").attr("id", "main1"))
                         );
@@ -905,70 +943,71 @@ function LoadController2(page, control, editRow, pageOld) {
 
 
                 case "PHOTO_V2":
-                    var ParentElement = $("<div>")
+                    var ParentElement = $("<ul>")
                         .attr("fieldid", xFields)
                         .attr("sectionid", xSection)
                         .attr("pageid", page)
                         .attr("FORM_PHOTO_V2", page)
+                        .addClass("button-wrap")
 
-                        .css("display", "inline")
                         .append(
-                        $("<div>")
-                            .css("display", "inline")
-                            .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .css("display", "inline")
-                                .css("margin", "0px")
-                                .attr("xFields", xFields)
-                                .attr("fieldid", xFields)
-                                .attr("sectionid", xSection)
-                                .attr("pageid", page)
-                                .attr("camtype", "photo")
-                                .attr("type", "button")
-                                .html("Capture Photo")
-                                .on({
-                                    click: function () {
-
-                                        if (navigator.camera == undefined)
-                                            alert("Can not open camra");
-
-                                        else {
-                                            getPhotoUrl((navigator.camera == undefined ? "" : navigator.camera.PictureSourceType.CAMERA), $(this).attr("xFields"));
-                                        }
-
-                                    }
-
-                                })
-                            )
-                            .append(
                             $("<hidden>")
                                 .attr("xFields", xFields)
                                 .attr("txt", "yes")
-                            )
+                        )
+                        .append(
+                            $("<li>")
+                                .append(
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .css("display", "inline")
+                                        .css("margin", "0px")
+                                        .attr("xFields", xFields)
+                                        .attr("fieldid", xFields)
+                                        .attr("sectionid", xSection)
+                                        .attr("pageid", page)
+                                        .attr("camtype", "photo")
+                                        .attr("type", "button")
+                                        .html("Capture Photo")
+                                        .on({
+                                            click: function () {
+
+                                                if (navigator.camera == undefined)
+                                                    alert("Can not open camera");
+
+                                                else {
+                                                    getPhotoUrl((navigator.camera == undefined ? "" : navigator.camera.PictureSourceType.CAMERA), $(this).attr("xFields"));
+                                                }
+
+                                            }
+
+                                        })
+                                ))
+                        .append($("<li>")
                             .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .attr("camtype", "album")
-                                .attr("xFields", xFields)
-                                .css("display", "block")
-                                .html("From Photo Album")
-                                .on({
-                                    click: function () {
-                                        getPhotoUrl(navigator.camera.PictureSourceType.SAVEDPHOTOALBUM, $(this).attr("xFields"));
-                                    }
-                                })
+                                $("<button>")
+                                    .attr("class", "btn-solid")
+                                    .attr("camtype", "album")
+                                    .attr("xFields", xFields)
+                                    .css("display", "block")
+                                    .html("From Photo Album")
+                                    .on({
+                                        click: function () {
+                                            getPhotoUrl(navigator.camera.PictureSourceType.SAVEDPHOTOALBUM, $(this).attr("xFields"));
+                                        }
+                                    })
                             )
-                            .append($("<br/>"))
-                            .append(
+                        )
+                        .append($("<br/>"))
+                        .append(
                             $("<img>")
                                 .attr("image", "smallImage")
                                 .css("display", "none")
                                 .css("width", "60px")
                                 .css("height", "60px")
                                 .attr("fieldid_cam", xFields)
-                            )
-                        );
+                        )
+                        ;
                     right_control = ParentElement;
                     break;
                     break;
@@ -979,55 +1018,55 @@ function LoadController2(page, control, editRow, pageOld) {
                         .attr("sectionid", xSection)
                         .attr("FORM_PHOTO", page)
                         .append(
-                        $("<div>")
-                            .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .attr("xFields", xFields)
-                                .html("Capture Photo")
-                                .on({
-                                    click: function () {
-                                        getPhoto((navigator.camera == undefined ? "" : navigator.camera.PictureSourceType.CAMERA), $(this).attr("xFields"));
-                                    }
-                                })
-                            )
-                            .append(
-                            $("<hidden>")
-                                .attr("xFields", xFields)
-                                .attr("txt", "yes")
-                            )
-                            .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .attr("xFields", xFields)
-                                .css("display", "none")
-                                .html("From Photo Library")
-                                .on({
-                                    click: function () {
-                                        getPhoto(navigator.camera.PictureSourceType.PHOTOLIBRARY, $(this).attr("xFields"));
-                                    }
-                                })
-                            )
-                            /* .append(
-                                 $("<button>")
-                                     .attr("class", "btn blue")
-                                     .attr("xFields", xFields)
-                                     .html("From Photo Album")
-                                     .on({
-                                         click: function () {
-                                             getPhoto(navigator.camera.PictureSourceType.SAVEDPHOTOALBUM, $(this).attr("xFields"));
-                                         }
-                                     })
-                             )*/
-                            .append($("<br/>"))
-                            .append(
-                            $("<img>")
-                                .attr("image", "smallImage")
-                                .css("display", "none")
-                                .css("width", "60px")
-                                .css("height", "60px")
-                                .attr("fieldid_cam", xFields)
-                            )
+                            $("<div>")
+                                .append(
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .attr("xFields", xFields)
+                                        .html("Capture Photo")
+                                        .on({
+                                            click: function () {
+                                                getPhoto((navigator.camera == undefined ? "" : navigator.camera.PictureSourceType.CAMERA), $(this).attr("xFields"));
+                                            }
+                                        })
+                                )
+                                .append(
+                                    $("<hidden>")
+                                        .attr("xFields", xFields)
+                                        .attr("txt", "yes")
+                                )
+                                .append(
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .attr("xFields", xFields)
+                                        .css("display", "none")
+                                        .html("From Photo Library")
+                                        .on({
+                                            click: function () {
+                                                getPhoto(navigator.camera.PictureSourceType.PHOTOLIBRARY, $(this).attr("xFields"));
+                                            }
+                                        })
+                                )
+                                /* .append(
+                                     $("<button>")
+                                         .attr("class", "btn-solid")
+                                         .attr("xFields", xFields)
+                                         .html("From Photo Album")
+                                         .on({
+                                             click: function () {
+                                                 getPhoto(navigator.camera.PictureSourceType.SAVEDPHOTOALBUM, $(this).attr("xFields"));
+                                             }
+                                         })
+                                 )*/
+                                .append($("<br/>"))
+                                .append(
+                                    $("<img>")
+                                        .attr("image", "smallImage")
+                                        .css("display", "none")
+                                        .css("width", "60px")
+                                        .css("height", "60px")
+                                        .attr("fieldid_cam", xFields)
+                                )
                         );
                     right_control = ParentElement;
                     break;
@@ -1037,18 +1076,18 @@ function LoadController2(page, control, editRow, pageOld) {
                         .attr("sectionid", xSection)
                         .attr("FORM_AUDIO_REC", page)
                         .append(
-                        $("<div>")
-                            .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .attr("xFields", xFields)
-                                .html("Click to Record")
-                                .on({
-                                    click: function () {
-                                        RecordAudio($(this).attr("xFields"));
-                                    }
-                                })
-                            )
+                            $("<div>")
+                                .append(
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .attr("xFields", xFields)
+                                        .html("Click to Record")
+                                        .on({
+                                            click: function () {
+                                                RecordAudio($(this).attr("xFields"));
+                                            }
+                                        })
+                                )
                         );
                     right_control = ParentElement;
                     break;
@@ -1058,18 +1097,18 @@ function LoadController2(page, control, editRow, pageOld) {
                         .attr("sectionid", xSection)
                         .attr("FORM_FACESCAN", page)
                         .append(
-                        $("<div>")
-                            .append(
-                            $("<button>")
-                                .attr("class", "btn blue")
-                                .attr("xFields", xFields)
-                                .html("Click to Authenticate")
-                                .on({
-                                    click: function () {
-                                        PerformFaceAuthentication($(this).attr("xFields"));
-                                    }
-                                })
-                            )
+                            $("<div>")
+                                .append(
+                                    $("<button>")
+                                        .attr("class", "btn-solid")
+                                        .attr("xFields", xFields)
+                                        .html("Click to Authenticate")
+                                        .on({
+                                            click: function () {
+                                                PerformFaceAuthentication($(this).attr("xFields"));
+                                            }
+                                        })
+                                )
                         );
                     right_control = ParentElement;
                     break;
@@ -1080,24 +1119,28 @@ function LoadController2(page, control, editRow, pageOld) {
                                 .attr("dest", FormSet.applications[global_applicationid].forms[page].PrimaryTable + "." + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
                                 .attr("field_dest", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].DataField)
                                 .attr("fieldid", xFields)
+                                .css("width", "auto")
                                 .attr("sectionid", xSection)
                                 .attr("FORM_BARCODE", page)
                                 .attr("xFields", xFields)
                                 .attr("fieldid_scan", xFields)
                                 .attr("class", "form-control_old")
                                 .attr("value", dValue)
+                                .attr("type", "text")
                                 .css("display", "inline")
                         )
                             .append(
-                            $("<a>")
-                                .attr("class", "btn blue")
-                                .attr("xFields_", xFields)
-                                .html("<i class='fa fa-barcode' style='color:white'>&nbsp;</i>")
-                                .on({
-                                    click: function () {
-                                        OpenBarCodeScanner($(this).attr("xFields_"));
-                                    }
-                                })
+                                $("<a>")
+                                    .attr("class", "btn-solid")
+                                    .css("height", "50px")
+                                    .css("width", "80px")
+                                    .attr("xFields_", xFields)
+                                    .html("<i class='fa fa-barcode' style='color:white'>&nbsp;</i>")
+                                    .on({
+                                        click: function () {
+                                            OpenBarCodeScanner($(this).attr("xFields_"));
+                                        }
+                                    })
                             )
                         ;
                     right_control = ParentElement;
@@ -1111,12 +1154,12 @@ function LoadController2(page, control, editRow, pageOld) {
                             $("<div>")
                                 .attr("class", "row")
                                 .append(
-                                $("<div>")
-                                    .attr("class", "col-sm-12")
-                                    .append(
                                     $("<div>")
-                                        .attr("loadingBox", FormSet.applications[global_applicationid].forms[page].FormID)
-                                    )
+                                        .attr("class", "col-sm-12")
+                                        .append(
+                                            $("<div>")
+                                                .attr("loadingBox", FormSet.applications[global_applicationid].forms[page].FormID)
+                                        )
                                 )
                         );
                     }
@@ -1125,69 +1168,95 @@ function LoadController2(page, control, editRow, pageOld) {
                         $("<div>")
                             .attr("class", "col-sm-6")
                             .append(
-                            $("<input>")
-                                .attr("class", "btn btn-primary")
-                                .attr("type", "btn btn-info")
-                                .attr("fieldid", xFields)
-                                .css("font-size", "large")
-                                .css("color", "white")
-                                .attr("id", FormSet.applications[global_applicationid].forms[page].PrimaryTable + "_" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Action)
-                                .attr("sectionid", xSection)
-                                .attr("pageid", page)
-                                .attr("childForm", (control == undefined ? "false" : "true"))
-                                .html("<b style='color:white'><i class='fa fa-check'></i>" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label + "</b>")
-                                .attr("value", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label)
-                                .on({
-                                    click: function () {
+                                $("<button>")
+                                    .attr("class", "btn-solid")
+                                    .attr("type", "btn btn-info")
+                                    .attr("fieldid", xFields)
+                                    .css("font-size", "large")
+                                    .css("color", "white")
+                                    .attr("id", FormSet.applications[global_applicationid].forms[page].PrimaryTable + "_" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Action)
+                                    .attr("sectionid", xSection)
+                                    .attr("pageid", page)
+                                    .attr("editKey", key)
+                                    .attr("childForm", (control == undefined ? "false" : "true"))
+                                    .html("<b style='color:white'><i class='fa fa-check'></i>" + FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label + "</b>")
+                                    .attr("value", FormSet.applications[global_applicationid].forms[page].Sections[xSection].Fields[xFields].Label)
+                                    .on({
+                                        click: function () {
 
-                                        $(this).attr("disabled", "disabled");
-                                        var fieldID = $(this).attr("fieldid");
-                                        var pageID = $(this).attr("pageid");
-                                        var sectionID = $(this).attr("sectionid");
+                                            $(this).attr("disabled", "disabled");
+                                            var fieldID = $(this).attr("fieldid");
+                                            var pageID = $(this).attr("pageid");
+                                            var sectionID = $(this).attr("sectionid");
 
-                                        if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].Action == "SubmitForm") {
+                                            if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].Action == "SubmitForm") {
 
 
-                                            iCurrentActivePage = -1;
-                                            // Standard Insert Function
-                                            if ($(this).attr("childForm") == "true") {
+                                                iCurrentActivePage = -1;
+                                                // Standard Insert Function
+                                                if ($(this).attr("childForm") == "true") {
+                                                    var fieldID = $(this).attr("fieldid");
+                                                    var sectionID = $(this).attr("sectionid");
+                                                    var pageID = $(this).attr("pageid");
 
-                                                var fieldID = $(this).attr("fieldid");
-                                                var sectionID = $(this).attr("sectionid");
-                                                var pageID = $(this).attr("pageid");
+                                                    $("[buttonAct='addFrom'][pageid='" + pageID + "']").show();
+                                                    $("[buttonAct='cancel'][pageid='" + pageID + "']").hide();
+                                                    $("[container='sectionrowclass'][parentpage='" + pageID + "']").show();
+                                                    $("[container='itemrowclass'][parentpage='" + pageID + "'][show='true']").show();
 
-                                                $("[buttonAct='addFrom'][pageid='" + pageID + "']").show();
-                                                $("[buttonAct='cancel'][pageid='" + pageID + "']").hide();
-                                                $("[container='sectionrowclass'][parentpage='" + pageID + "']").show();
-                                                $("[container='itemrowclass'][parentpage='" + pageID + "'][show='true']").show();
+                                                    $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("");
 
-                                                $("[container='child'][fieldid='" + fieldID + "'][sectionid='" + sectionID + "'][pageid='" + pageID + "']").html("");
 
-                                                // Create temp variable here
-                                                child_item.PageID = pageID;
+                                                    // If it was an item edit
+                                                    if ($(this).attr("editKey") != "") {
+                                                        var key = $(this).attr("editKey");
+                                                        for (var xC = 0; xC < ChildForms.length; xC++) {
+                                                            if (ChildForms[xC].UniqueValue == key) {
+                                                                for (var xFields = 0; xFields < ChildForms[xC].SyncArray.InsertLayerFields.length; xFields++) {
+                                                                    ChildForms[xC].SyncArray.InsertLayerFields[xFields].Value = $("[dest='" + ChildForms[xC].SyncArray.InsertLayerFields[xFields].Table + "." + ChildForms[xC].SyncArray.InsertLayerFields[xFields].Field + "']").val() ;
+                                                                    child_item = ChildForms[xC];
+                                                                }
 
+                                                                break;
+                                                            }
+                                                        }
+
+
+                                                        $("[buttonAct='addFrom'][pageid='" + child_item.ParentForm + "']").show();
+                                                        $("[buttonAct='cancel'][pageid='" + child_item.ParentForm + "']").hide();
+                                                        $("[container='sectionrowclass'][parentpage='" + pageID + "']").hide();
+                                                        $("[container='itemrowclass'][parentpage='" + child_item.ParentForm + "']").show();
+                                                        $("[container='sectionrowclass'][parentpage='" + child_item.ParentForm + "']").show();
+                                                        $("[container='itemrowclass'][parentpage='" + child_item.PageID + "']").hide();
+
+
+                                                        $("[container='child'][fieldid='" + child_item.ParentFieldID + "'][sectionid='" + child_item.ParentSectionID + "'][pageid='" + child_item.ParentForm + "']").html("");
+
+                                                        UpdateSubTableForm(pageID, child_item.ParentFormUID, child_item);
+                                                    }
+                                                    else {
+                                                        console.log("Did not find an edit key");
+                                                    }
+                                                }
+
+
+                                                GetPosition();
+                                                FilterOption["pageid"] = pageID;
+                                                if ($(this).attr("editKey") == "")
+                                                    setTimeout(function () {
+                                                        PerformInsert(FilterOption["pageid"]);
+                                                    }, (DevicePosition.msg == "Failed to get position" ? 0 : 1200));
                                             }
                                             else {
+
+
+                                                if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].ButtonScript != undefined) {
+                                                    eval(replaceVals(FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].ButtonScript, "[Q]", "\""));
+                                                }
+                                                $(this).removeAttr("disabled");
                                             }
-
-
-
-                                            GetPosition();
-                                            FilterOption["pageid"] = pageID;
-                                            setTimeout(function () {
-                                                PerformInsert(FilterOption["pageid"]);
-                                            }, (DevicePosition.msg == "Failed to get position" ? 0 : 1200));
                                         }
-                                        else {
-
-
-                                            if (FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].ButtonScript != undefined) {
-                                                eval(FormSet.applications[global_applicationid].forms[pageID].Sections[sectionID].Fields[fieldID].ButtonScript);
-                                            }
-                                            $(this).removeAttr("disabled");
-                                        }
-                                    }
-                                })
+                                    })
                             );
                     break;
                 case "label":
@@ -1225,14 +1294,20 @@ function LoadController2(page, control, editRow, pageOld) {
                     .css("display", sDisplayField)
                     .attr("class", "form-group form-row")
                     .append(
-                    $(left_control).append(right_control)
+                        $(left_control).append(right_control)
                     )
 
             );
         }
-        $(c).append($("<br/>"));
     }
 
+
+
+    $(sectionBlock).append(
+        $("<li>").append(
+            $("<a>").addClass("opener").attr("openerInit", "false").attr("href", "#").text(activeSection).append($("<i>").addClass("icon icon-chevron-down"))).append($("<div>").addClass("slide").append(c)));
+    if (FormSet)
+        $(cM).append(sectionBlock);
 
     $("[buttonAct='cancel'][pageid='" + pageOld + "']").show();
     // End of loop   
@@ -1248,7 +1323,7 @@ function LoadController2(page, control, editRow, pageOld) {
 
     }
 
-    $(c).append(
+    $(cM).append(
         $("<div>")
             .attr("id", "divSignHere")
             .css("display", "none")
@@ -1263,39 +1338,39 @@ function LoadController2(page, control, editRow, pageOld) {
             .css("padding", "10px")
             .append($("<span>").text("Please sign below"))
             .append(
-            $("<div>")
-                .css("height", "85%")
-                .css("width", "95%")
-                .attr("container", "signature_sign")
-                .html("Signature")
+                $("<div>")
+                    .css("height", "85%")
+                    .css("width", "95%")
+                    .attr("container", "signature_sign")
+                    .html("Signature")
             )
             .append(
-            $("<div>")
-                .css("display", "inline")
-                .append(
-                $("<button>")
-                    .attr("class", "btn btn-info")
+                $("<div>")
                     .css("display", "inline")
-                    .html("Cancel")
-                    .on({
-                        click: function () {
-                            $("#divSignHere").hide();
-                        }
-                    })
-                )
-                .append(
-                $("<button>")
-                    .attr("class", "btn btn-primary")
-                    .html("Done")
-                    .css("display", "inline")
-                    .on({
-                        click: function () {
-                            $("[FORM_JSIG][fieldid='" + $("[container='signature_sign']").attr("fieldid") + "'][sectionid='" + $("[container='signature_sign']").attr("sectionid") + "'] [container='signature']").html($("[container='signature_sign']").jSignature("getData"));
-                            $("button[fieldid='" + $("[container='signature_sign']").attr("fieldid") + "'][sectionid='" + $("[container='signature_sign']").attr("sectionid") + "']").html("Sign <i class='fa fa-check'>");
-                            $("#divSignHere").hide();
-                        }
-                    })
-                )
+                    .append(
+                        $("<button>")
+                            .attr("class", "btn btn-info")
+                            .css("display", "inline")
+                            .html("Cancel")
+                            .on({
+                                click: function () {
+                                    $("#divSignHere").hide();
+                                }
+                            })
+                    )
+                    .append(
+                        $("<button>")
+                            .attr("class", "btn btn-info")
+                            .html("Done")
+                            .css("display", "inline")
+                            .on({
+                                click: function () {
+                                    $("[FORM_JSIG][fieldid='" + $("[container='signature_sign']").attr("fieldid") + "'][sectionid='" + $("[container='signature_sign']").attr("sectionid") + "'] [container='signature']").html($("[container='signature_sign']").jSignature("getData"));
+                                    $("button[fieldid='" + $("[container='signature_sign']").attr("fieldid") + "'][sectionid='" + $("[container='signature_sign']").attr("sectionid") + "']").html("Sign <i class='fa fa-check'>");
+                                    $("#divSignHere").hide();
+                                }
+                            })
+                    )
             )
     )
 
@@ -1305,12 +1380,12 @@ function LoadController2(page, control, editRow, pageOld) {
     if (control == undefined) {
 
         $("#FORM_" + FormSet.applications[global_applicationid].forms[page].FormID).html("");
-        $("#FORM_" + FormSet.applications[global_applicationid].forms[page].FormID).append(c);
+        $("#FORM_" + FormSet.applications[global_applicationid].forms[page].FormID).append(cM);
     }
     else {
 
         $("[container='child'][fieldid='" + control.fieldID + "'][sectionid='" + control.sectionID + "'][pageid='" + control.pageID + "']").html("");
-        $("[container='child'][fieldid='" + control.fieldID + "'][sectionid='" + control.sectionID + "'][pageid='" + control.pageID + "']").append(c);
+        $("[container='child'][fieldid='" + control.fieldID + "'][sectionid='" + control.sectionID + "'][pageid='" + control.pageID + "']").append(cM);
 
 
         $("[container='sectionrowclass'][parentpage='" + control.pageID + "']").hide();
@@ -1328,6 +1403,7 @@ function LoadController2(page, control, editRow, pageOld) {
     $('[container="formrowid"][parentpage="' + page + '"]').attr("jsonS", JSON.stringify(child_item));
 
 
+    initOpenClose();
 
     for (var xC = 0; xC < arrShowHideSettings.length; xC++) {
         $("[field_dest='" + arrShowHideSettings[xC][1] + "']").on("change", { _data: "test", xC: xC }, function (event) {
@@ -1338,6 +1414,24 @@ function LoadController2(page, control, editRow, pageOld) {
         }
         );
 
+    }
+
+
+    if (editData != undefined) {
+        console.log("EDIT ROW!" + editData);
+        setTimeout(function () {
+
+            $("select").each(function () {
+                if ($(this).find("[selected]").length > 0) {
+                    $(this).val($($(this).find("[selected]")[0]).val());
+                    $(this).trigger("change");
+                }
+            });
+
+            $("[form_ddl_multi]").each(function (e) { var selected = Array(); $($(this).find('[selected]')).each(function () { selected.push($(this).val()) }); $(this).val(selected); });
+
+
+        }, 500);
     }
 
 }
@@ -1424,11 +1518,6 @@ function GetPosition() {
             function (error) {
                 console.log("Get posiition failed");
 
-                if (GPS_accuracy_attempt < 5) {
-                    GPS_accuracy_attempt++;
-                    GetPosition();
-                    return;
-                }
                 DevicePosition = new Object();
                 DevicePosition.msg = "Failed to get position";
                 DevicePosition.error = error;
@@ -1436,6 +1525,11 @@ function GetPosition() {
                 DevicePosition.coords.longitude = 0;
                 DevicePosition.coords.latitude = 0;
                 DevicePosition.timestamp = new Date();
+                if (GPS_accuracy_attempt < 5) {
+                    GPS_accuracy_attempt++;
+                    GetPosition();
+                    return;
+                }
                 $("[FORM_GEO]").val("0");
             }, options);
     else {
@@ -1517,8 +1611,8 @@ function capturePhoto(fieldid) {
         }
 
     }, onFail, {
-            quality: 25, destinationType: Camera.DestinationType.FILE_URL
-        });
+        quality: 25, destinationType: Camera.DestinationType.FILE_URL
+    });
 }
 
 
@@ -1546,8 +1640,8 @@ function capturePhotoEdit(fieldid) {
             $("[fieldid_cam='" + fieldid + "']").attr("src", "data:image/jpeg;base64," + imageURI);
         }
     }, onFail, {
-            quality: 50, allowEdit: true
-        });
+        quality: 50, allowEdit: true
+    });
 }
 
 // A button will call this function
@@ -1584,10 +1678,10 @@ function getPhoto(source, fieldid) {
         }
 
     }, onFail, {
-            quality: 50,
-            sourceType: source,
-            destinationType: Camera.DestinationType.FILE_URI
-        });
+        quality: 50,
+        sourceType: source,
+        destinationType: Camera.DestinationType.FILE_URI
+    });
 }
 
 
@@ -1632,10 +1726,10 @@ function getPhotoUrl(source, fieldid) {
         }
 
     }, onFail, {
-            quality: 20,
-            sourceType: source,
-            destinationType: Camera.DestinationType.DATA_URL
-        });
+        quality: 20,
+        sourceType: source,
+        destinationType: Camera.DestinationType.DATA_URL
+    });
 }
 
 // Called if something bad happens.
@@ -1821,4 +1915,16 @@ function OpenBarCodeScanner(fieldid) {
             }
         );
     }
-}  
+}
+
+// open-close init
+function initOpenClose() {
+    jQuery('.accordion .opener[openerInit=false],.accordion .opener[openerInit=false]').click(function (e) {
+
+        e.preventDefault();
+        jQuery(this).parent().toggleClass('active');
+        jQuery(this).parent().find('.slide').slideToggle();
+        jQuery(this).attr("openerInit", "true");
+
+    })
+}

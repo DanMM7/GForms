@@ -1,17 +1,21 @@
 <!--- This file will display the data to be synced -->
-
-<div class="pull-right">
-    <button act='Refresh' class="btn blue" type="button"><i class="fa fa-refresh"></i> Refresh</button>
-    <button act='Logout' class="btn red" type="button"><i class="fa fa-lock"></i> Log out</button>
+<div class="text-wrap">
+					<h1>Sync Operations</h1> 
+					<div class="text-holder">
+    <button act='Refresh' class="btn btn-info" type="button"><i class="fa fa-refresh"></i> Refresh</button>
+    <button act='Logout' class="btn btn-danger" type="button"><i class="fa fa-lock"></i> Log out</button>
 </div>
+				</div>
+
 
 <br />
-<div class="row" style="margin:0px">
-    <div class="form-horizontal form-basic">
-        <h2>Sync Operations</h2>
+
+<div class="container" style="margin:0px">
+    <div class="form">
         <div>
             <span></span>
-            <table class="table" >
+			<div class="block-table" >
+            <table >
                 <thead>
                     <tr>
                         <th style="font-weight: bold; text-align: center;">Form Name</th>
@@ -20,16 +24,17 @@
                 </thead>
                 <tbody  style="font-weight: normal;" id="tblInsertOperations"></tbody>
             </table>
-            
+            </div>
  
             <table id="tblEdits"></table>
 
             <p lbl='SyncImages' style="display:none;">Number of images: 0</p>
             
+            <hr/>
             <br/>
             <p lbl='SyncMessage'>Click <b>Submit</b> below to sync your edits with the server</p>
            <!--  <button class="btn red" act="ClearLocalS">Clear Sync Log</button> &nbsp; -->
-            <button class="btn blue" act="ExecuteSync">Submit</button>
+            <button class="btn-solid" act="ExecuteSync">Submit</button>
             <br /><br />
             <div id="divStatus"></div>
         </div>
@@ -387,7 +392,7 @@
                         .attr("class", "table")
                         .append(
                         $("<tr>")
-                            .append($("<td>").html("Number of Forms Effected"))
+                            .append($("<td>").html("Number of Forms Affected"))
                             .append($("<td>").html(results.RecordsInserted))
                     )
                 ).append(
