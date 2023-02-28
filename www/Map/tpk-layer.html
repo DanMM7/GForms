@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en-us">
+<!DOCTYPE html>
+<html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
@@ -63,7 +63,13 @@
             overflow: scroll;
         }
     </style>
-
+    <script src="https://use.fontawesome.com/ac971cba6e.js"></script>
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+       
     <!--
         Include a reference to IndexedDBShim for library to work on Safari 7.x.
         May not be required for all Safari browsers.
@@ -80,7 +86,15 @@
         <div style="position:absolute; top:0px; left:0px; z-index:2000; width:100%; height:30px; background-color:#002776 !important" id='divHeader' class="list">
             <h4 style="color:white;    padding: 0px;    padding-left: 20px;" lbl="Header">[Map Name]</h4>
         </div>
-        <div style="position:absolute; top:30px; right:0px; z-index:900000; height:95px; width:250px; padding:5px;"><div id='divLayerList'></div></div>
+        <div class="container-md bg-light " style="position:absolute; top:30px; right:0px; z-index:900000; height:auto; width:250px; padding:5px;">
+            <a data-toggle="collapse" data-target="#demo" style="cursor: pointer; font-size:700;"><i class="fa fa-check-square" aria-hidden="true"></i> Map Layers</a>
+            <div id="demo" class="collapse">
+              <ul>
+                <div id='divLayerList'></div>
+              </ul>
+            </div>
+        </div>
+        
         <div id="mapDiv" style="height:100%; width:100%; position:absolute; top:30px;"></div>
     </div>
 
@@ -92,7 +106,8 @@
     <script src="utils/init.js"></script>
 
     <script>
-        mapData = JSON.parse($('#mapData', window.parent.document).attr("mapData"));
+
+        mapData =  {"forms": [{"formID": 328, "formName": "GWork"}], "mapName": "Sishen Mine", "offlineMaps": [{"lastUpdate": -1, "name": "Centurion Base 1", "status": "pending", "url": "MWDSMS_tpk.tpk"}, {"lastUpdate": -1, "name": "Centurion Base 2", "status": "pending", "url": "MWDSMS_tpk.tpk"}], "onlineMaps": []}, {"forms": [{"formID": 328, "formName": "GWork"}], "mapName": "Centurion", "offlineMaps": [{"lastUpdate": -1, "name": "Centurion Base", "status": "pending", "url": "https://ghprodsrv03.giscoe.com/GiscoeInternalSystem/GFORMS/Map/Centurion.tpk.zip"}], "onlineMaps": [{"dataNode": "", "lastUpdate": -1, "name": "Base map one", "status": "pending", "url": "https://ghprodsrv03.giscoe.com/arcgis/rest/services/Training/Training_Shane_WebLAYER/MapServer"}]};
         var coodx = $('#mapData', window.parent.document).attr("coordX");
         var coody = $('#mapData', window.parent.document).attr("coordY");
 
@@ -109,8 +124,6 @@
             "dojo/on",
             "esri/graphic",
             "esri/layers/GraphicsLayer",
-
-
             "utils/offline-tpk-min.js", "dojo/domReady!"],
             function (ArcGISDynamicMapServiceLayer, Map, on, Graphic, GraphicsLayer) {
                 
@@ -123,7 +136,8 @@
                     $("#divLayerList").append(
                         $("<div>")
                             .append(
-                            $("<b>").html(mapData.offlineMaps[iMap].name)
+                                $("<i class='fa fa-location-arrow'></i>").html(""),
+                                $("<b>").html(mapData.offlineMaps[iMap].name)
                             )
                             .append(
                             $("<div>")
@@ -164,7 +178,7 @@
 
 
                 if (coodx == "0")
-                    console.log("COORD ISSUNUE");//;alert("Unable to locate device position.");
+                    console.log("COORD ISSUNUE"); //;alert("Unable to locate device position.");
 
                 else {
 				/*
@@ -219,7 +233,7 @@
 
                     xhrRequest.onload = function (oEvent) {
                         if (this.status == 200) {
-                            $("[status='" + id + "']").html("Remote tpk download finished.");// Create textbox calling tpk layer id
+                            $("[status='" + id + "']").html("Remote tpk download finished.");
                             zipParser(this.response);
                         }
                         else {
@@ -261,7 +275,8 @@
                     tpkLayer.extend(entries);
                     map.addLayer(tpkLayer);
 
-                    console.log(tpkLayer);
+console.log(tpkLayer);
+
 
                 }
 
